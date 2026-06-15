@@ -6,9 +6,7 @@
 import User from "../models/User.js";
 import Post from "../models/Post.js";
 import bcrypt from "bcryptjs";
-import { Resend } from "resend";
-
-const resend = new Resend(process.env.RESEND_API_KEY);
+import axios from "axios";
 
 
 // GET PROFILE
@@ -289,15 +287,32 @@ export const changePassword = async (req, res) => {
 
     await user.save();
 
-    await resend.emails.send({
-      from: "ArtistZone <onboarding@resend.dev>",
-      to: user.email,
-      subject: "Password Changed Successfully",
-      html: `
-        <h2>Password Changed</h2>
-        <p>Your password has been changed successfully.</p>
-      `,
-    });
+    await axios.post(
+      "https://api.brevo.com/v3/smtp/email",
+      {
+        sender: {
+          name: "ArtistZone",
+          email: process.env.BREVO_EMAIL || "artandartistneverstop@gmail.com",
+        },
+        to: [
+          {
+            email: user.email,
+          },
+        ],
+        subject: "Password Changed Successfully",
+        htmlContent: `
+          <h2>Password Changed</h2>
+          <p>Your password has been changed successfully.</p>
+        `,
+      },
+      {
+        headers: {
+          "api-key": process.env.BREVO_SMTP_KEY,
+          "Content-Type": "application/json",
+          "accept": "application/json",
+        },
+      }
+    );
 
     res.status(200).json({
       message: "Password updated successfully",

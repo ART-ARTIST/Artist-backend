@@ -1,16 +1,13 @@
 import express from "express";
 import dotenv from "dotenv";
 import OTP from "../models/otp.js";
-import { Resend } from "resend";
+import axios from "axios";
 
 dotenv.config();
 
 const router = express.Router();
 
-// RESEND INIT
-const resend = new Resend(process.env.RESEND_API_KEY);
-
-// SEND OTP
+// SEND OTP using Brevo REST API to bypass Render SMTP blocks
 router.post("/send", async (req, res) => {
   try {
     const { email } = req.body;
@@ -29,25 +26,42 @@ router.post("/send", async (req, res) => {
     await OTP.deleteMany({ email });
     await OTP.create({ email, otp });
 
-    // SEND EMAIL (RESEND)
-    const { data, error } = await resend.emails.send({
-      from: "ArtistZone <onboarding@resend.dev>",
-      to: email,
-      subject: "OTP Verification",
-      html: `
-        <div style="text-align:center;font-family:Arial">
-          <h2>ArtZone OTP Verification</h2>
-          <h1 style="color:#8B5CF6;font-size:40px">${otp}</h1>
-          <p>This OTP is valid for 5 minutes</p>
-        </div>
-      `,
-    });
-
-    if (error) {
-      console.error("RESEND ERROR:", error);
+    // SEND EMAIL (BREVO API)
+    try {
+      await axios.post(
+        "https://api.brevo.com/v3/smtp/email",
+        {
+          sender: {
+            name: "ArtistZone",
+            email: process.env.BREVO_EMAIL || "artandartistneverstop@gmail.com",
+          },
+          to: [
+            {
+              email: email,
+            },
+          ],
+          subject: "OTP Verification",
+          htmlContent: `
+            <div style="text-align:center;font-family:Arial">
+              <h2>ArtZone OTP Verification</h2>
+              <h1 style="color:#8B5CF6;font-size:40px">${otp}</h1>
+              <p>This OTP is valid for 5 minutes</p>
+            </div>
+          `,
+        },
+        {
+          headers: {
+            "api-key": process.env.BREVO_SMTP_KEY,
+            "Content-Type": "application/json",
+            "accept": "application/json",
+          },
+        }
+      );
+    } catch (apiError) {
+      console.error("BREVO API ERROR:", apiError.response?.data || apiError.message);
       return res.status(500).json({
         success: false,
-        msg: "Failed to send OTP via Resend",
+        msg: "Failed to send OTP via Brevo",
       });
     }
 
