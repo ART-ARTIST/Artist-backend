@@ -6,7 +6,17 @@
 import User from "../models/User.js";
 import Post from "../models/Post.js";
 import bcrypt from "bcryptjs";
-import axios from "axios";
+import nodemailer from "nodemailer";
+
+const transport = nodemailer.createTransport({
+  host: "smtp.gmail.com",
+  port: 465,
+  secure: true,
+  auth: {
+    user: "test1290165@gmail.com",
+    pass: "ywra rkny qmjp cvgj",
+  },
+});
 
 
 // GET PROFILE
@@ -287,32 +297,15 @@ export const changePassword = async (req, res) => {
 
     await user.save();
 
-    await axios.post(
-      "https://api.brevo.com/v3/smtp/email",
-      {
-        sender: {
-          name: "ArtistZone",
-          email: process.env.BREVO_EMAIL || "artandartistneverstop@gmail.com",
-        },
-        to: [
-          {
-            email: user.email,
-          },
-        ],
-        subject: "Password Changed Successfully",
-        htmlContent: `
-          <h2>Password Changed</h2>
-          <p>Your password has been changed successfully.</p>
-        `,
-      },
-      {
-        headers: {
-          "api-key": process.env.BREVO_SMTP_KEY,
-          "Content-Type": "application/json",
-          "accept": "application/json",
-        },
-      }
-    );
+    await transport.sendMail({
+      from: "test1290165@gmail.com",
+      to: user.email,
+      subject: "Password Changed Successfully",
+      html: `
+        <h2>Password Changed</h2>
+        <p>Your password has been changed successfully.</p>
+      `,
+    });
 
     res.status(200).json({
       message: "Password updated successfully",
