@@ -9,7 +9,9 @@ import bcrypt from "bcryptjs";
 import nodemailer from "nodemailer";
 
 const transport = nodemailer.createTransport({
-  service: "gmail",
+  host: "smtp.gmail.com",
+  port: 465,
+  secure: true,
   auth: {
     user: "artandartistneverstop@gmail.com",
     pass: process.env.GMAIL_OTP,

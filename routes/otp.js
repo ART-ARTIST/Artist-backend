@@ -11,8 +11,8 @@ console.log("GMAIL_OTP EXISTS =", !!process.env.GMAIL_OTP);
 
 const transport = nodemailer.createTransport({
   host: "smtp.gmail.com",
-  port: 587,
-  secure: false,
+  port: 465,
+  secure: true,
   connectionTimeout: 15000,
   greetingTimeout: 15000,
   socketTimeout: 15000,
