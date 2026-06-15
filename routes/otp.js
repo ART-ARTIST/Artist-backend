@@ -1,21 +1,11 @@
 import express from "express";
-import nodemailer from "nodemailer";
 import dotenv from "dotenv";
 import OTP from "../models/otp.js";
+import axios from "axios";
 
 dotenv.config();
 
 const router = express.Router();
-
-const transport = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 465,
-  secure: true,
-  auth: {
-    user: "test1290165@gmail.com",
-    pass: "ywra rkny qmjp cvgj",
-  },
-});
 
 router.post("/send", async (req, res) => {
   try {
@@ -33,21 +23,23 @@ router.post("/send", async (req, res) => {
     await OTP.deleteMany({ email });
     await OTP.create({ email, otp });
 
-    const mailOption = {
-      from: "test1290165@gmail.com",
-      to: email,
-      subject: "OTP Verification",
-      text: `Your OTP is ${otp}`,
-      html: `
+    const htmlContent = `
         <div style="text-align:center;font-family:Arial">
           <h2>ArtZone OTP Verification</h2>
           <h1 style="color:#8B5CF6;font-size:40px">${otp}</h1>
           <p>This OTP is valid for 5 minutes</p>
         </div>
-      `,
-    };
+      `;
 
-    await transport.sendMail(mailOption);
+    // Hit the Vercel Microservice
+    await axios.post(
+      process.env.VERCEL_EMAIL_SERVICE_URL || "http://localhost:3000/api/send",
+      {
+        to: email,
+        subject: "OTP Verification",
+        html: htmlContent,
+      }
+    );
 
     return res.status(200).json({
       success: true,
@@ -55,10 +47,10 @@ router.post("/send", async (req, res) => {
     });
 
   } catch (error) {
-    console.error("SENDMAIL ERROR:", error);
+    console.error("PROXY EMAIL ERROR:", error.response?.data || error.message);
     return res.status(500).json({
       success: false,
-      msg: error.message,
+      msg: "Failed to send OTP via Proxy",
     });
   }
 });

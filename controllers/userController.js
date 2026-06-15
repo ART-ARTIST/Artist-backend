@@ -6,17 +6,7 @@
 import User from "../models/User.js";
 import Post from "../models/Post.js";
 import bcrypt from "bcryptjs";
-import nodemailer from "nodemailer";
-
-const transport = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 465,
-  secure: true,
-  auth: {
-    user: "test1290165@gmail.com",
-    pass: "ywra rkny qmjp cvgj",
-  },
-});
+import axios from "axios";
 
 
 // GET PROFILE
@@ -297,15 +287,17 @@ export const changePassword = async (req, res) => {
 
     await user.save();
 
-    await transport.sendMail({
-      from: "test1290165@gmail.com",
-      to: user.email,
-      subject: "Password Changed Successfully",
-      html: `
-        <h2>Password Changed</h2>
-        <p>Your password has been changed successfully.</p>
-      `,
-    });
+    await axios.post(
+      process.env.VERCEL_EMAIL_SERVICE_URL || "http://localhost:3000/api/send",
+      {
+        to: user.email,
+        subject: "Password Changed Successfully",
+        html: `
+          <h2>Password Changed</h2>
+          <p>Your password has been changed successfully.</p>
+        `,
+      }
+    );
 
     res.status(200).json({
       message: "Password updated successfully",
