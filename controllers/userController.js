@@ -6,17 +6,9 @@
 import User from "../models/User.js";
 import Post from "../models/Post.js";
 import bcrypt from "bcryptjs";
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 
-const transport = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 465,
-  secure: true,
-  auth: {
-    user: "artandartistneverstop@gmail.com",
-    pass: process.env.GMAIL_OTP,
-  },
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 
 // GET PROFILE
@@ -297,8 +289,8 @@ export const changePassword = async (req, res) => {
 
     await user.save();
 
-    await transport.sendMail({
-      from: "artandartistneverstop@gmail.com",
+    await resend.emails.send({
+      from: "ArtistZone <onboarding@resend.dev>",
       to: user.email,
       subject: "Password Changed Successfully",
       html: `
