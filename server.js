@@ -77,6 +77,9 @@
 //   console.log(`Server running on port ${process.env.PORT} 🚀`);
 // });
 
+import dns from "node:dns";
+dns.setDefaultResultOrder("ipv4first");
+
 console.log("🔥 REAL SERVER RUNNING");
 
 import express from "express";
